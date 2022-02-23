@@ -14,7 +14,7 @@ provider "aws" {
 
 
 
-resource "aws_s3_bucket" "www_themundogroup_com" {
+resource "aws_s3_bucket" "www_themundogroup_ui" {
   bucket = "www.themundogroup.com"
   acl    = "public-read"
   versioning {
@@ -105,10 +105,10 @@ resource "aws_s3_bucket" "themundogroup-api" {
 # frontend - Cloudfront, SSL Certificate, Cloudfront Logs, Website Bucket
 
 locals {
-  s3_origin_id = "themundogroup_com_origin_id"
+  s3_origin_id = "themundogroup-api_origin_id"
 }
 
-resource "aws_s3_bucket" "themundogroup_com" {
+resource "aws_s3_bucket" "themundogroup-api" {
   bucket = var.themundogroup_website_bucket_name
   acl    = "public-read"
   versioning {
