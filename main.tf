@@ -14,7 +14,7 @@ provider "aws" {
 
 
 
-resource "aws_s3_bucket" "www_themundogroup_ui" {
+resource "aws_s3_bucket" "www_themundogroup_com" {
   bucket = "www.themundogroup.com"
   acl    = "public-read"
   versioning {
@@ -105,10 +105,10 @@ resource "aws_s3_bucket" "themundogroup-api" {
 # frontend - Cloudfront, SSL Certificate, Cloudfront Logs, Website Bucket
 
 locals {
-  s3_origin_id = "themundogroup-api_origin_id"
+  s3_origin_id = "themundogroup_com_origin_id"
 }
 
-resource "aws_s3_bucket" "themundogroup-api" {
+resource "aws_s3_bucket" "themundogroup_com" {
   bucket = var.themundogroup_website_bucket_name
   acl    = "public-read"
   versioning {
@@ -117,25 +117,6 @@ resource "aws_s3_bucket" "themundogroup-api" {
   website {
     index_document = "index.html"
     error_document = "index.html"
-    #     routing_rules  = <<EOF
-    # [{
-    #     "Condition": {
-    #         "HttpErrorCodeReturnedEquals": "403"
-    #     },
-    #     "Redirect": {
-    #         "ReplaceKeyWith": "/index.html"
-    #     }
-    # },
-    # {
-    #     "Condition": {
-    #         "HttpErrorCodeReturnedEquals": "404"
-    #     },
-    #     "Redirect": {
-    #         "ReplaceKeyWith": "/index.html"
-    #     }
-    # }
-    # ]
-    # EOF
   }
 
 }

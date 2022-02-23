@@ -46,9 +46,7 @@ resource "aws_api_gateway_rest_api_policy" "the_mundo_group" {
       "Effect": "Allow",
       "Principal": "*",
       "Action": "execute-api:Invoke",
-      "Resource": [
-          "execute-api:/*"
-      ]
+      "Resource": "execute-api:/*"
     }
   ]
 }
