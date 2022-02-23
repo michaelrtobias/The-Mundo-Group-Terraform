@@ -595,7 +595,8 @@ resource "aws_codebuild_project" "mundo_group_ui_project" {
 }
 
 module "lambdas" {
-  source = "./modules/lambda"
+  source                                 = "./modules/lambda"
+  aws_codestarconnections_connection_arn = aws_codestarconnections_connection.github.arn
 }
 # module "CICD" {
 #   source = "./modules/lambda"
@@ -603,3 +604,12 @@ module "lambdas" {
 # }
 
 
+module "api_gateway" {
+  source                  = "./modules/apigateway"
+  create_lead_invoke_arn  = module.lambdas.create_lead_invoke_arn
+  upload_image_invoke_arn = module.lambdas.upload_image_invoke_arn
+  create_lead_arn         = module.lambdas.create_lead_arn
+  upload_image_arn        = module.lambdas.upload_image_arn
+  create_lead_lambda      = module.lambdas.create_lead_lambda
+  upload_image_lambda     = module.lambdas.upload_image_lambda
+}
