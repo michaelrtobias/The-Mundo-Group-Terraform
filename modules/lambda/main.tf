@@ -37,6 +37,15 @@ resource "aws_iam_policy" "send_email_lambda_policy" {
       ],
       "Resource": "arn:aws:logs:*:*:*",
       "Effect": "Allow"
+    },
+    {
+      "Action": [
+        "sqs:ReceiveMessage",
+        "sqs:DeleteMessage",
+        "sqs:GetQueueAttributes"
+      ],
+      "Resource": "${var.send_email_queue.arn}",
+      "Effect": "Allow"
     }
   ]
 }
@@ -67,7 +76,7 @@ resource "aws_lambda_function" "send_email_lambda" {
   s3_bucket         = aws_s3_bucket.mundo_group_lambda_code.bucket
   s3_key            = data.aws_s3_bucket_object.send_email_code.key
   s3_object_version = data.aws_s3_bucket_object.send_email_code.version_id
-  # source_code_hash  = "${base64sha256("lambdas/sendEmail.zip")}"
+
 }
 
 
@@ -449,7 +458,11 @@ resource "aws_lambda_function" "create_lead_lambda" {
   s3_bucket         = aws_s3_bucket.mundo_group_lambda_code.bucket
   s3_key            = data.aws_s3_bucket_object.create_lead_code.key
   s3_object_version = data.aws_s3_bucket_object.create_lead_code.version_id
-  # source_code_hash  = "${base64sha256("lambdas/createLead.zip")}"
+  environment {
+    variables = {
+      QUEUEURL = var.send_email_queue.url
+    }
+  }
 }
 
 
