@@ -20,3 +20,7 @@ output "upload_image_arn" {
 output "upload_image_lambda" {
   value = aws_lambda_function.upload_image_lambda
 }
+
+output "send_email_lambda" {
+  value = aws_lambda_function.send_email_lambda
+}
