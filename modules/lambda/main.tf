@@ -837,7 +837,7 @@ resource "aws_lambda_function" "upload_image_lambda" {
   s3_object_version = data.aws_s3_bucket_object.upload_image_code.version_id
   environment {
     variables = {
-      BUCKET = "themundogroup"
+      BUCKET = "southwestwatches"
     }
   }
 }
