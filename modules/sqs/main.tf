@@ -1,5 +1,7 @@
 resource "aws_sqs_queue" "send_email" {
   name = "send_email"
+  # message_retention_seconds = 60
+  visibility_timeout_seconds = 240
 }
 
 resource "aws_sqs_queue_policy" "send_email" {
