@@ -1,3 +1,5 @@
+# CI/CD for The Mundo Group UI
+
 resource "aws_codepipeline" "codepipeline" {
   name     = "the-mundo-group-ui"
   role_arn = aws_iam_role.codepipeline_role.arn
@@ -19,7 +21,7 @@ resource "aws_codepipeline" "codepipeline" {
       output_artifacts = ["SourceArtifact"]
 
       configuration = {
-        ConnectionArn        = "${aws_codestarconnections_connection.github.arn}"
+        ConnectionArn        = "${var.github_connection_arn}"
         FullRepositoryId     = "michaelrtobias/the-mundo-group-ui"
         BranchName           = "master"
         OutputArtifactFormat = "CODE_ZIP"
@@ -51,10 +53,6 @@ resource "aws_codepipeline" "codepipeline" {
 
 
 
-resource "aws_codestarconnections_connection" "github" {
-  name          = "github-connection"
-  provider_type = "GitHub"
-}
 
 resource "aws_s3_bucket" "themundogroup-frontend-pipeline" {
   bucket = "themundogroup-frontend-pipeline"
@@ -108,7 +106,7 @@ resource "aws_iam_role_policy" "codepipeline_policy" {
       "Action": [
         "codestar-connections:UseConnection"
       ],
-      "Resource": "${aws_codestarconnections_connection.github.arn}"
+      "Resource": "${var.github_connection_arn}"
     },
     {
       "Effect": "Allow",
@@ -126,8 +124,8 @@ EOF
 
 # CodeBuild for The Mundo Group UI
 
-resource "aws_s3_bucket" "mundo_group_code_build_ui" {
-  bucket = "mundo-group-code-build-ui"
+resource "aws_s3_bucket" "sww_code_build_ui" {
+  bucket = "sww-code-build-ui"
   acl    = "private"
 }
 
@@ -219,8 +217,8 @@ resource "aws_iam_role_policy" "code_build_ui_role_policy" {
         "s3:GetBucketLocation"
       ],
       "Resource": [
-        "${aws_s3_bucket.mundo_group_code_build_ui.arn}",
-        "${aws_s3_bucket.mundo_group_code_build_ui.arn}/*"
+        "${aws_s3_bucket.sww_code_build_ui.arn}",
+        "${aws_s3_bucket.sww_code_build_ui.arn}/*"
       ]
     },
     {
@@ -245,8 +243,8 @@ resource "aws_iam_role_policy" "code_build_ui_role_policy" {
         "s3:PutObject"
       ],
       "Resource": [
-        "${var.themundogroup_com_bucket_arn}",
-        "${var.themundogroup_com_bucket_arn}/*"
+        "${var.southwestwatches_com_bucket.arn}",
+        "${var.southwestwatches_com_bucket.arn}/*"
       ]
     },
     {
@@ -275,7 +273,7 @@ resource "aws_codebuild_project" "mundo_group_ui_project" {
 
   cache {
     type     = "S3"
-    location = aws_s3_bucket.mundo_group_code_build_ui.bucket
+    location = aws_s3_bucket.sww_code_build_ui.bucket
   }
 
   environment {
@@ -293,7 +291,7 @@ resource "aws_codebuild_project" "mundo_group_ui_project" {
 
     s3_logs {
       status   = "ENABLED"
-      location = "${aws_s3_bucket.mundo_group_code_build_ui.id}/build-log"
+      location = "${aws_s3_bucket.sww_code_build_ui.id}/build-log"
     }
   }
 
