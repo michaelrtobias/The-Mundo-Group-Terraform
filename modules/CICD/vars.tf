@@ -1,3 +1,3 @@
-variable themundogroup_com_bucket_arn {
-  type = string
-}
+variable "github_connection_arn" {}
+
+variable "southwestwatches_com_bucket" {}
