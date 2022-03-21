@@ -21,6 +21,7 @@ module "lambdas" {
   source                                 = "./modules/lambda"
   aws_codestarconnections_connection_arn = aws_codestarconnections_connection.github.arn
   send_email_queue                       = module.sqs.send_email_queue
+  send_email_ses_identity                = module.ses.send_email_ses_identity
 }
 
 module "CICD" {
@@ -52,4 +53,9 @@ module "route53" {
 
 module "frontend" {
   source = "./modules/frontend"
+}
+
+module "ses" {
+  source                = "./modules/ses"
+  southwestwatches_zone = module.route53.southwestwatches_zone
 }
