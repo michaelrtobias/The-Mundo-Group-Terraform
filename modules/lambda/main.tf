@@ -30,6 +30,7 @@ resource "aws_iam_policy" "send_email_lambda_policy" {
   "Version": "2012-10-17",
   "Statement": [
     {
+      "Sid": "logs",
       "Action": [
         "logs:CreateLogGroup",
         "logs:CreateLogStream",
@@ -39,12 +40,21 @@ resource "aws_iam_policy" "send_email_lambda_policy" {
       "Effect": "Allow"
     },
     {
+      "Sid": "RecieveSQSMessages",
       "Action": [
         "sqs:ReceiveMessage",
         "sqs:DeleteMessage",
         "sqs:GetQueueAttributes"
       ],
       "Resource": "${var.send_email_queue.arn}",
+      "Effect": "Allow"
+    },
+    {
+      "Sid": "sesPermissions",
+      "Action": [
+        "ses:SendEmail"
+      ],
+      "Resource": "${var.send_email_ses_identity.arn}",
       "Effect": "Allow"
     }
   ]
