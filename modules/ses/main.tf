@@ -15,4 +15,7 @@ resource "aws_route53_record" "send_email_ses_domain_mail_from_mx" {
 resource "aws_route53_record" "send_email_ses_domain_mail_from_txt" {
   zone_id = var.southwestwatches_zone.id
   name    = aws_ses_domain_mail_from.southwestwatches.mail_from_domain
+  type    = "TXT"
+  records = ["v=spf1 include:amazonses.com -all"]
+  ttl     = 600
 }

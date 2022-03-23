@@ -8,8 +8,6 @@ resource "aws_api_gateway_rest_api" "the_mundo_group_api" {
 
 resource "aws_api_gateway_deployment" "the_mundo_group" {
   rest_api_id = aws_api_gateway_rest_api.the_mundo_group_api.id
-
-
   lifecycle {
     create_before_destroy = true
   }
