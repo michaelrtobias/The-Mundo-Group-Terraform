@@ -56,9 +56,12 @@ resource "aws_codepipeline" "codepipeline" {
 
 resource "aws_s3_bucket" "themundogroup-frontend-pipeline" {
   bucket = "themundogroup-frontend-pipeline"
-  acl    = "private"
 }
 
+resource "aws_s3_bucket_acl" "themundogroup-frontend-pipeline" {
+  bucket = aws_s3_bucket.themundogroup-frontend-pipeline.id
+  acl    = "private"
+}
 resource "aws_iam_role" "codepipeline_role" {
   name               = "frontend-pipeline-role"
   assume_role_policy = <<EOF
@@ -76,6 +79,7 @@ resource "aws_iam_role" "codepipeline_role" {
 }
 EOF
 }
+
 
 resource "aws_iam_role_policy" "codepipeline_policy" {
   name = "frontend_codepipeline_policy"
@@ -126,6 +130,10 @@ EOF
 
 resource "aws_s3_bucket" "sww_code_build_ui" {
   bucket = "sww-code-build-ui"
+}
+
+resource "aws_s3_bucket_acl" "sww_code_build_ui" {
+  bucket = aws_s3_bucket.sww_code_build_ui.id
   acl    = "private"
 }
 

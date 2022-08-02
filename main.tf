@@ -2,7 +2,7 @@ terraform {
   required_providers {
     aws = {
       source  = "hashicorp/aws"
-      version = "~> 3.0"
+      version = "~> 4.24.0"
     }
   }
 }
@@ -58,4 +58,13 @@ module "frontend" {
 module "ses" {
   source                = "./modules/ses"
   southwestwatches_zone = module.route53.southwestwatches_zone
+}
+
+module "cognito" {
+  source                = "./modules/cognito"
+  southwestwatches_zone = module.route53.southwestwatches_zone
+}
+
+module "dynamodb" {
+  source = "./modules/dynamodb"
 }
