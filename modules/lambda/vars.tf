@@ -4,6 +4,7 @@ variable "send_email_queue" {}
 
 variable "send_email_ses_identity" {}
 
+variable "southwestwatches_bucket" {}
 variable "inventory_lambdas" {
   type = map(any)
   default = {

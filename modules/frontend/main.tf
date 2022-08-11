@@ -61,7 +61,7 @@ resource "aws_s3_bucket" "southwestwatches" {
   }
   cors_rule {
     allowed_headers = ["*"]
-    allowed_methods = ["PUT", "POST", "GET"]
+    allowed_methods = ["PUT", "POST", "GET", "DELETE"]
     allowed_origins = ["*"]
     expose_headers  = []
     max_age_seconds = 3000
@@ -78,7 +78,7 @@ resource "aws_s3_bucket_policy" "southwestwatches_bucket_policy" {
         "Sid" : "AddPerm",
         "Effect" : "Allow",
         "Principal" : "*",
-        "Action" : ["s3:GetObject", "s3:PutObject", "s3:PutObjectAcl"],
+        "Action" : ["s3:GetObject", "s3:PutObject", "s3:PutObjectAcl", "s3:DeleteObject"],
         "Resource" : "arn:aws:s3:::southwestwatches/*"
       }
     ]

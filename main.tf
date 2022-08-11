@@ -22,6 +22,7 @@ module "lambdas" {
   aws_codestarconnections_connection_arn = aws_codestarconnections_connection.github.arn
   send_email_queue                       = module.sqs.send_email_queue
   send_email_ses_identity                = module.ses.send_email_ses_identity
+  southwestwatches_bucket                = module.frontend.southwestwatches_bucket
 }
 
 module "CICD" {
@@ -39,6 +40,8 @@ module "api_gateway" {
   upload_image_arn        = module.lambdas.upload_image_arn
   create_lead_lambda      = module.lambdas.create_lead_lambda
   upload_image_lambda     = module.lambdas.upload_image_lambda
+  delete_image_lambda     = module.lambdas.delete_image_lambda
+  inventory_lambdas       = module.lambdas.inventory_lambdas
 }
 
 module "sqs" {
