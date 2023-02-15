@@ -5,3 +5,7 @@ output "sww_cloudfront_distribution" {
 output "southwestwatches_com_bucket" {
   value = aws_s3_bucket.southwestwatches_com
 }
+
+output "southwestwatches_bucket" {
+  value = aws_s3_bucket.southwestwatches
+}

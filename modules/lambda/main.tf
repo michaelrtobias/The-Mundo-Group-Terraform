@@ -1155,3 +1155,772 @@ resource "aws_codebuild_project" "mundo_group_lambda_uploadImage_project" {
     Environment = "prod"
   }
 }
+# delete image lambda infrastructure
+
+resource "aws_iam_role" "delete_image_lambda_role" {
+  name = "delete_image"
+
+  assume_role_policy = <<EOF
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Action": "sts:AssumeRole",
+      "Principal": {
+        "Service": "lambda.amazonaws.com"
+      },
+      "Effect": "Allow",
+      "Sid": ""
+    }
+  ]
+}
+EOF
+}
+
+resource "aws_iam_policy" "delete_image_lambda_policy" {
+  name        = "delete_image_lambda_policy"
+  path        = "/"
+  description = "IAM policy for delete image lambda"
+
+  policy = <<EOF
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Action": [
+        "logs:CreateLogGroup",
+        "logs:CreateLogStream",
+        "logs:PutLogEvents"
+      ],
+      "Resource": "arn:aws:logs:*:*:*",
+      "Effect": "Allow"
+    }
+  ]
+}
+EOF
+}
+
+resource "aws_iam_role_policy_attachment" "delete_image_lambda_policy_attachment" {
+  role       = aws_iam_role.delete_image_lambda_role.name
+  policy_arn = aws_iam_policy.delete_image_lambda_policy.arn
+}
+
+data "aws_s3_bucket_object" "delete_image_code" {
+  bucket = aws_s3_bucket.mundo_group_lambda_code.bucket
+  key    = "lambdas/delete-image.zip"
+}
+resource "aws_lambda_function" "delete_image_lambda" {
+  function_name     = "delete-image"
+  role              = aws_iam_role.delete_image_lambda_role.arn
+  handler           = "src/index.handler"
+  runtime           = "nodejs14.x"
+  s3_bucket         = aws_s3_bucket.mundo_group_lambda_code.bucket
+  s3_key            = data.aws_s3_bucket_object.delete_image_code.key
+  s3_object_version = data.aws_s3_bucket_object.delete_image_code.version_id
+  environment {
+    variables = {
+      BUCKET = "southwestwatches"
+    }
+  }
+}
+
+
+# CI/CD for The Mundo Group Lambda deleteImage
+
+resource "aws_codepipeline" "codepipeline_deleteImage_Lambda" {
+  name     = "the-mundo-group-lambda-deleteImage"
+  role_arn = aws_iam_role.codepipeline_role_deleteImage.arn
+
+  artifact_store {
+    location = aws_s3_bucket.themundogroup-lambda-deleteImage-pipeline.bucket
+    type     = "S3"
+  }
+
+  stage {
+    name = "Source"
+
+    action {
+      name             = "Source"
+      category         = "Source"
+      owner            = "AWS"
+      provider         = "CodeStarSourceConnection"
+      version          = "1"
+      output_artifacts = ["SourceArtifact"]
+
+      configuration = {
+        ConnectionArn        = var.aws_codestarconnections_connection_arn
+        FullRepositoryId     = "michaelrtobias/sww-delete-image"
+        BranchName           = "master"
+        OutputArtifactFormat = "CODE_ZIP"
+      }
+    }
+  }
+
+  stage {
+    name = "Build"
+
+    action {
+      name             = "Build"
+      category         = "Build"
+      owner            = "AWS"
+      provider         = "CodeBuild"
+      input_artifacts  = ["SourceArtifact"]
+      output_artifacts = ["build_output"]
+      version          = "1"
+
+      configuration = {
+        ProjectName = "mundo-group-lambda-deleteImage"
+      }
+    }
+  }
+
+
+}
+
+
+resource "aws_s3_bucket" "themundogroup-lambda-deleteImage-pipeline" {
+  bucket = "themundogroup-lambda-delete-image-pipeline"
+  acl    = "private"
+}
+
+resource "aws_iam_role" "codepipeline_role_deleteImage" {
+  name               = "lambda-deleteImage-pipeline-role"
+  assume_role_policy = <<EOF
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Principal": {
+        "Service": "codepipeline.amazonaws.com"
+      },
+      "Action": "sts:AssumeRole"
+    }
+  ]
+}
+EOF
+}
+
+resource "aws_iam_role_policy" "codepipeline_policy_deleteImage" {
+  name = "lambda_deleteImage_codepipeline_policy"
+  role = aws_iam_role.codepipeline_role_deleteImage.id
+
+  policy = <<EOF
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect":"Allow",
+      "Action": [
+        "s3:GetObject",
+        "s3:GetObjectVersion",
+        "s3:GetBucketVersioning",
+        "s3:PutObjectAcl",
+        "s3:PutObject",
+        "s3:ListObjects",
+        "s3:ListBucket"
+      ],
+      "Resource": [
+        "${aws_s3_bucket.themundogroup-lambda-deleteImage-pipeline.arn}",
+        "${aws_s3_bucket.themundogroup-lambda-deleteImage-pipeline.arn}/*"
+      ]
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "codestar-connections:UseConnection"
+      ],
+      "Resource": "${var.aws_codestarconnections_connection_arn}"
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "codebuild:BatchGetBuilds",
+        "codebuild:StartBuild"
+      ],
+      "Resource": "*"
+    }
+  ]
+}
+EOF
+}
+
+
+# CodeBuild for The Mundo Group lambda code
+
+resource "aws_s3_bucket" "mundo_group_code_build_lambda_deleteImage" {
+  bucket = "mundo-group-code-build-lambda-delete-image"
+  acl    = "private"
+}
+
+resource "aws_iam_role" "code_build_lambda_deleteImage_role" {
+  name = "code_build_lambda_deleteImage_role"
+
+  assume_role_policy = <<EOF
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Principal": {
+        "Service": "codebuild.amazonaws.com"
+      },
+      "Action": "sts:AssumeRole"
+    }
+  ]
+}
+EOF
+}
+
+resource "aws_iam_role_policy" "code_build_lambda_deleteImage_role_policy" {
+  role = aws_iam_role.code_build_lambda_deleteImage_role.name
+
+  policy = <<POLICY
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Resource": [
+        "*"
+      ],
+      "Action": [
+        "logs:CreateLogGroup",
+        "logs:CreateLogStream",
+        "logs:PutLogEvents"
+      ]
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "ec2:CreateNetworkInterface",
+        "ec2:DescribeDhcpOptions",
+        "ec2:DescribeNetworkInterfaces",
+        "ec2:DeleteNetworkInterface",
+        "ec2:DescribeSubnets",
+        "ec2:DescribeSecurityGroups",
+        "ec2:DescribeVpcs"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "ec2:CreateNetworkInterfacePermission"
+      ],
+      "Resource": [
+        "arn:aws:ec2:*:*:network-interface/*"
+      ],
+      "Condition": {
+        "StringLike": {
+          "ec2:Subnet": "*",
+          "ec2:AuthorizedService": "codebuild.amazonaws.com"
+        }
+      }
+    },
+     {
+      "Effect": "Allow",
+      "Action": [
+          "codebuild:CreateReportGroup",
+          "codebuild:CreateReport",
+          "codebuild:UpdateReport",
+          "codebuild:BatchPutTestCases",
+          "codebuild:BatchPutCodeCoverages"
+      ],
+      "Resource": [
+          "*"
+      ]
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "s3:PutObject",
+        "s3:GetObject",
+        "s3:GetObjectVersion",
+        "s3:GetBucketAcl",
+        "s3:GetBucketLocation"
+      ],
+      "Resource": [
+        "${aws_s3_bucket.mundo_group_code_build_lambda_deleteImage.arn}",
+        "${aws_s3_bucket.mundo_group_code_build_lambda_deleteImage.arn}/*"
+      ]
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "s3:ListObjects",
+        "s3:GetObject",
+        "s3:ListBucket",
+        "s3:PutObject"
+      ],
+      "Resource": [
+        "${aws_s3_bucket.themundogroup-lambda-deleteImage-pipeline.arn}",
+        "${aws_s3_bucket.themundogroup-lambda-deleteImage-pipeline.arn}/*",
+        "${aws_s3_bucket.mundo_group_lambda_code.arn}",
+        "${aws_s3_bucket.mundo_group_lambda_code.arn}/*"
+      ]
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "lambda:UpdateFunctionCode"
+      ],
+      "Resource": [
+        "${aws_lambda_function.delete_image_lambda.arn}",
+        "${aws_lambda_function.delete_image_lambda.arn}/*"
+      ]
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "s3:*",
+        "s3-object-lambda:*"
+      ],
+      "Resource": "*"
+    }
+  ]
+}
+POLICY
+}
+
+resource "aws_codebuild_project" "mundo_group_lambda_deleteImage_project" {
+  name           = "mundo-group-lambda-deleteImage"
+  description    = "mundo-group-lambda-deleteImage codebuild project"
+  build_timeout  = "5"
+  service_role   = aws_iam_role.code_build_lambda_deleteImage_role.arn
+  source_version = "master"
+
+  artifacts {
+    type = "CODEPIPELINE"
+  }
+
+  cache {
+    type     = "S3"
+    location = aws_s3_bucket.mundo_group_code_build_lambda_deleteImage.bucket
+  }
+
+  environment {
+    compute_type                = "BUILD_GENERAL1_SMALL"
+    image                       = "aws/codebuild/standard:5.0"
+    type                        = "LINUX_CONTAINER"
+    image_pull_credentials_type = "CODEBUILD"
+  }
+
+  logs_config {
+    cloudwatch_logs {
+      group_name  = "codebuild-mundo-group-lambda-deleteImage-group"
+      stream_name = "codebuild-mundo-group-lambda-deleteImage-log-stream"
+    }
+
+    s3_logs {
+      status   = "ENABLED"
+      location = "${aws_s3_bucket.mundo_group_code_build_lambda_deleteImage.id}/build-log"
+    }
+  }
+
+  source {
+    type            = "CODEPIPELINE"
+    git_clone_depth = 0
+  }
+
+  tags = {
+    Environment = "prod"
+  }
+}
+
+
+
+# start of dynamic stuff
+
+data "aws_dynamodb_table" "watch_inventory_table" {
+  name = "watchInventory"
+}
+
+resource "aws_iam_role" "inventory_lambdas_role" {
+  name = "inventory-lambdas"
+
+  assume_role_policy = <<EOF
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Action": "sts:AssumeRole",
+      "Principal": {
+        "Service": "lambda.amazonaws.com"
+      },
+      "Effect": "Allow",
+      "Sid": ""
+    }
+  ]
+}
+EOF
+}
+
+resource "aws_iam_policy" "inventory_lambdas_policy" {
+  name        = "inventory_lambdas_policy"
+  path        = "/"
+  description = "IAM policy for inventory inventory lambdas"
+
+  policy = <<EOF
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Action": [
+        "logs:CreateLogGroup",
+        "logs:CreateLogStream",
+        "logs:PutLogEvents"
+      ],
+      "Resource": "arn:aws:logs:*:*:*",
+      "Effect": "Allow"
+    },
+    {
+     "Action": [
+        "dynamodb:*"
+      ],
+      "Resource": "${data.aws_dynamodb_table.watch_inventory_table.arn}",
+      "Effect": "Allow"
+    }
+  ]
+}
+EOF
+}
+
+resource "aws_iam_role_policy_attachment" "inventory_lambdas_policy_attachment" {
+  role       = aws_iam_role.inventory_lambdas_role.name
+  policy_arn = aws_iam_policy.inventory_lambdas_policy.arn
+}
+
+data "aws_s3_bucket_object" "inventory_lambdas_code" {
+  for_each = var.inventory_lambdas
+  bucket   = aws_s3_bucket.mundo_group_lambda_code.bucket
+  key      = "lambdas/${each.value}.zip"
+}
+resource "aws_lambda_function" "inventory_lambdas" {
+  for_each          = var.inventory_lambdas
+  function_name     = each.value
+  role              = aws_iam_role.inventory_lambdas_role.arn
+  handler           = "src/index.handler"
+  runtime           = "nodejs14.x"
+  s3_bucket         = aws_s3_bucket.mundo_group_lambda_code.bucket
+  s3_key            = data.aws_s3_bucket_object.inventory_lambdas_code[each.key].key
+  s3_object_version = data.aws_s3_bucket_object.inventory_lambdas_code[each.key].version_id
+  environment {
+    variables = {
+      BUCKET = "southwestwatches"
+    }
+  }
+}
+
+
+# CI/CD for Southwest Watches Inventory Lambda
+
+resource "aws_codepipeline" "inventory_lambdas" {
+  for_each = var.inventory_lambdas
+  name     = "sww-${each.value}-lambda"
+  role_arn = aws_iam_role.codepipeline_role_inventory_lambdas.arn
+
+  artifact_store {
+    location = aws_s3_bucket.sww_inventory_lambdas_pipeline[each.value].bucket
+    type     = "S3"
+  }
+
+  stage {
+    name = "Source"
+
+    action {
+      name             = "Source"
+      category         = "Source"
+      owner            = "AWS"
+      provider         = "CodeStarSourceConnection"
+      version          = "1"
+      output_artifacts = ["SourceArtifact"]
+
+      configuration = {
+        ConnectionArn        = var.aws_codestarconnections_connection_arn
+        FullRepositoryId     = "michaelrtobias/sww-${each.value}"
+        BranchName           = "master"
+        OutputArtifactFormat = "CODE_ZIP"
+      }
+    }
+  }
+
+  stage {
+    name = "Build"
+
+    action {
+      name             = "Build"
+      category         = "Build"
+      owner            = "AWS"
+      provider         = "CodeBuild"
+      input_artifacts  = ["SourceArtifact"]
+      output_artifacts = ["build_output"]
+      version          = "1"
+
+      configuration = {
+        ProjectName = "sww-lambda-${each.value}"
+      }
+    }
+  }
+
+
+}
+
+
+resource "aws_s3_bucket" "sww_inventory_lambdas_pipeline" {
+  for_each = var.inventory_lambdas
+  bucket   = "sww-lambda-${each.value}-pipeline"
+  acl      = "private"
+}
+
+resource "aws_iam_role" "codepipeline_role_inventory_lambdas" {
+  name               = "lambda-inventory-lambdas-pipeline-role"
+  assume_role_policy = <<EOF
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Principal": {
+        "Service": "codepipeline.amazonaws.com"
+      },
+      "Action": "sts:AssumeRole"
+    }
+  ]
+}
+EOF
+}
+
+resource "aws_iam_role_policy" "codepipeline_policy_inventory_lambdas" {
+  for_each = var.inventory_lambdas
+
+  name = "inventory_lambda_codepipeline_policy-${each.key}"
+  role = aws_iam_role.codepipeline_role_inventory_lambdas.id
+
+  policy = <<EOF
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect":"Allow",
+      "Action": [
+        "s3:GetObject",
+        "s3:GetObjectVersion",
+        "s3:GetBucketVersioning",
+        "s3:PutObjectAcl",
+        "s3:PutObject",
+        "s3:ListObjects",
+        "s3:ListBucket"
+      ],
+      "Resource": [
+        "${aws_s3_bucket.sww_inventory_lambdas_pipeline[each.key].arn}",
+        "${aws_s3_bucket.sww_inventory_lambdas_pipeline[each.key].arn}/*"
+      ]
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "codestar-connections:UseConnection"
+      ],
+      "Resource": "${var.aws_codestarconnections_connection_arn}"
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "codebuild:BatchGetBuilds",
+        "codebuild:StartBuild"
+      ],
+      "Resource": "*"
+    }
+  ]
+}
+EOF
+}
+
+
+# CodeBuild for The Mundo Group lambda code
+
+resource "aws_s3_bucket" "sww_code_build_inventory_lambda" {
+  for_each = var.inventory_lambdas
+  bucket   = "sww-code-build-inventory-lambda-${each.key}"
+  acl      = "private"
+}
+
+resource "aws_iam_role" "code_build_inventory_lambda_role" {
+  name = "code_build_inventory_lambda_role"
+
+  assume_role_policy = <<EOF
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Principal": {
+        "Service": "codebuild.amazonaws.com"
+      },
+      "Action": "sts:AssumeRole"
+    }
+  ]
+}
+EOF
+}
+
+resource "aws_iam_role_policy" "code_build_inventory_lambda_role_policy" {
+  for_each = var.inventory_lambdas
+  role     = aws_iam_role.code_build_inventory_lambda_role.name
+
+  policy = <<POLICY
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Resource": [
+        "*"
+      ],
+      "Action": [
+        "logs:CreateLogGroup",
+        "logs:CreateLogStream",
+        "logs:PutLogEvents"
+      ]
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "ec2:CreateNetworkInterface",
+        "ec2:DescribeDhcpOptions",
+        "ec2:DescribeNetworkInterfaces",
+        "ec2:DeleteNetworkInterface",
+        "ec2:DescribeSubnets",
+        "ec2:DescribeSecurityGroups",
+        "ec2:DescribeVpcs"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "ec2:CreateNetworkInterfacePermission"
+      ],
+      "Resource": [
+        "arn:aws:ec2:*:*:network-interface/*"
+      ],
+      "Condition": {
+        "StringLike": {
+          "ec2:Subnet": "*",
+          "ec2:AuthorizedService": "codebuild.amazonaws.com"
+        }
+      }
+    },
+     {
+      "Effect": "Allow",
+      "Action": [
+          "codebuild:CreateReportGroup",
+          "codebuild:CreateReport",
+          "codebuild:UpdateReport",
+          "codebuild:BatchPutTestCases",
+          "codebuild:BatchPutCodeCoverages"
+      ],
+      "Resource": [
+          "*"
+      ]
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "s3:PutObject",
+        "s3:GetObject",
+        "s3:GetObjectVersion",
+        "s3:GetBucketAcl",
+        "s3:GetBucketLocation"
+      ],
+      "Resource": [
+        "${aws_s3_bucket.sww_inventory_lambdas_pipeline[each.key].arn}",
+        "${aws_s3_bucket.sww_inventory_lambdas_pipeline[each.key].arn}/*"
+      ]
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "s3:ListObjects",
+        "s3:GetObject",
+        "s3:ListBucket",
+        "s3:PutObject"
+      ],
+      "Resource": [
+        "${aws_s3_bucket.sww_inventory_lambdas_pipeline[each.key].arn}",
+        "${aws_s3_bucket.sww_inventory_lambdas_pipeline[each.key].arn}/*",
+        "${aws_s3_bucket.mundo_group_lambda_code.arn}",
+        "${aws_s3_bucket.mundo_group_lambda_code.arn}/*"
+      ]
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "lambda:UpdateFunctionCode"
+      ],
+      "Resource": [
+        "${aws_lambda_function.inventory_lambdas[each.key].arn}",
+        "${aws_lambda_function.inventory_lambdas[each.key].arn}/*"
+      ]
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "s3:*",
+        "s3-object-lambda:*"
+      ],
+      "Resource": "*"
+    }
+  ]
+}
+POLICY
+}
+
+resource "aws_codebuild_project" "sww_lambda_inventory_lambdas_project" {
+  for_each       = var.inventory_lambdas
+  name           = "sww-lambda-${each.value}"
+  description    = "sww-lambda-${each.value} codebuild project"
+  build_timeout  = "5"
+  service_role   = aws_iam_role.code_build_inventory_lambda_role.arn
+  source_version = "master"
+
+  artifacts {
+    type = "CODEPIPELINE"
+  }
+
+  cache {
+    type     = "S3"
+    location = aws_s3_bucket.sww_code_build_inventory_lambda[each.key].bucket
+  }
+
+  environment {
+    compute_type                = "BUILD_GENERAL1_SMALL"
+    image                       = "aws/codebuild/standard:5.0"
+    type                        = "LINUX_CONTAINER"
+    image_pull_credentials_type = "CODEBUILD"
+  }
+
+  logs_config {
+    cloudwatch_logs {
+      group_name  = "codebuild-sww-lambda-${each.value}-group"
+      stream_name = "codebuild-sww-lambda-${each.value}-log-stream"
+    }
+
+    s3_logs {
+      status   = "ENABLED"
+      location = "${aws_s3_bucket.sww_code_build_inventory_lambda[each.key].id}/build-log"
+    }
+  }
+
+  source {
+    type            = "CODEPIPELINE"
+    git_clone_depth = 0
+  }
+
+  tags = {
+    Environment = "prod"
+  }
+}
+
+

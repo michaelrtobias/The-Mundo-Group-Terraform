@@ -1,14 +1,32 @@
 resource "aws_s3_bucket" "www_southwestwatches_com" {
   bucket = "www.southwestwatches.com"
-  acl    = "public-read"
   versioning {
     enabled = true
   }
-  website {
-    index_document = "index.html"
-    error_document = "index.html"
 
+}
 
+resource "aws_s3_bucket_acl" "www_southwestwatches_com" {
+  bucket = aws_s3_bucket.www_southwestwatches_com.id
+  acl    = "public-read"
+}
+
+resource "aws_s3_bucket_versioning" "www_southwestwatches_com" {
+  bucket = aws_s3_bucket.www_southwestwatches_com.id
+  versioning_configuration {
+    status = "Enabled"
+  }
+}
+
+resource "aws_s3_bucket_website_configuration" "www_southwestwatches_com" {
+  bucket = aws_s3_bucket.www_southwestwatches_com.bucket
+
+  index_document {
+    suffix = "index.html"
+  }
+
+  error_document {
+    key = "index.html"
   }
 }
 
@@ -43,7 +61,7 @@ resource "aws_s3_bucket" "southwestwatches" {
   }
   cors_rule {
     allowed_headers = ["*"]
-    allowed_methods = ["PUT", "POST", "GET"]
+    allowed_methods = ["PUT", "POST", "GET", "DELETE"]
     allowed_origins = ["*"]
     expose_headers  = []
     max_age_seconds = 3000
@@ -60,7 +78,7 @@ resource "aws_s3_bucket_policy" "southwestwatches_bucket_policy" {
         "Sid" : "AddPerm",
         "Effect" : "Allow",
         "Principal" : "*",
-        "Action" : ["s3:GetObject", "s3:PutObject", "s3:PutObjectAcl"],
+        "Action" : ["s3:GetObject", "s3:PutObject", "s3:PutObjectAcl", "s3:DeleteObject"],
         "Resource" : "arn:aws:s3:::southwestwatches/*"
       }
     ]
@@ -87,6 +105,13 @@ resource "aws_s3_bucket" "southwestwatches_com" {
   }
 
 }
+
+resource "aws_s3_bucket_acl" "southwestwatches_com" {
+  bucket = aws_s3_bucket.southwestwatches_com.id
+  acl    = "public-read"
+}
+
+
 resource "aws_cloudfront_origin_access_identity" "s3-access-origin" {
   comment = "origin access identity resource for southwestwatches.com distrobution"
 }

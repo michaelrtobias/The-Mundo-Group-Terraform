@@ -24,3 +24,11 @@ output "upload_image_lambda" {
 output "send_email_lambda" {
   value = aws_lambda_function.send_email_lambda
 }
+
+output "inventory_lambdas" {
+  value = aws_lambda_function.inventory_lambdas
+}
+
+output "delete_image_lambda" {
+  value = aws_lambda_function.delete_image_lambda
+}
