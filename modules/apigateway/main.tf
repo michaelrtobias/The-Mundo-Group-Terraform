@@ -442,3 +442,61 @@ resource "aws_api_gateway_integration_response" "get_inventory_by_colorway" {
     "application/json" = ""
   }
 }
+// get watches
+
+resource "aws_api_gateway_resource" "watches" {
+  rest_api_id = aws_api_gateway_rest_api.the_mundo_group_api.id
+  parent_id   = aws_api_gateway_rest_api.the_mundo_group_api.root_resource_id
+  path_part   = "watches"
+}
+resource "aws_api_gateway_method" "get_watches" {
+  rest_api_id   = aws_api_gateway_rest_api.the_mundo_group_api.id
+  resource_id   = aws_api_gateway_resource.watches.id
+  http_method   = "GET"
+  authorization = "NONE"
+}
+
+resource "aws_api_gateway_integration" "get_watches_lambda" {
+  rest_api_id             = aws_api_gateway_rest_api.the_mundo_group_api.id
+  resource_id             = aws_api_gateway_resource.watches.id
+  http_method             = aws_api_gateway_method.get_watches.http_method
+  integration_http_method = "GET"
+  type                    = "AWS_PROXY"
+  uri                     = var.inventory_lambdas["get-watches"].invoke_arn
+}
+
+resource "aws_lambda_permission" "get_watches_lambda" {
+  statement_id  = "AllowTMGReadInventoryAPIInvoke"
+  action        = "lambda:InvokeFunction"
+  function_name = var.inventory_lambdas["get-watches"].function_name
+  principal     = "apigateway.amazonaws.com"
+  source_arn    = "${aws_api_gateway_rest_api.the_mundo_group_api.execution_arn}/*/*/*"
+}
+
+resource "aws_api_gateway_method_response" "get_watches_200" {
+  rest_api_id         = aws_api_gateway_rest_api.the_mundo_group_api.id
+  resource_id         = aws_api_gateway_resource.watches.id
+  http_method         = aws_api_gateway_method.get_watches.http_method
+  response_parameters = { "method.response.header.Access-Control-Allow-Origin" = true }
+  response_models = {
+    "application/json" = "Empty"
+  }
+  status_code = "200"
+}
+resource "aws_api_gateway_method_response" "get_watches_400" {
+  rest_api_id = aws_api_gateway_rest_api.the_mundo_group_api.id
+  resource_id = aws_api_gateway_resource.watches.id
+  http_method = aws_api_gateway_method.get_watches.http_method
+  status_code = "400"
+}
+
+resource "aws_api_gateway_integration_response" "get_watches" {
+  rest_api_id = aws_api_gateway_rest_api.the_mundo_group_api.id
+  resource_id = aws_api_gateway_resource.watches.id
+  http_method = aws_api_gateway_method.get_watches.http_method
+  status_code = "200"
+
+  response_templates = {
+    "application/json" = ""
+  }
+}
