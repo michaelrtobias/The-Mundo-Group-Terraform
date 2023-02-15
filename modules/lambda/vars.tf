@@ -8,9 +8,10 @@ variable "southwestwatches_bucket" {}
 variable "inventory_lambdas" {
   type = map(any)
   default = {
-    create-inventory = "create-inventory",
-    read-inventory   = "read-inventory",
-    update-inventory = "update-inventory",
-    delete-inventory = "delete-inventory",
+    create-inventory          = "create-inventory",
+    read-inventory            = "read-inventory",
+    update-inventory          = "update-inventory",
+    delete-inventory          = "delete-inventory",
+    get-inventory-by-colorway = "get-inventory-by-colorway"
   }
 }

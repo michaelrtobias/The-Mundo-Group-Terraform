@@ -172,7 +172,7 @@ resource "aws_api_gateway_integration_response" "delete_images" {
 resource "aws_api_gateway_resource" "inventory" {
   rest_api_id = aws_api_gateway_rest_api.the_mundo_group_api.id
   parent_id   = aws_api_gateway_rest_api.the_mundo_group_api.root_resource_id
-  path_part   = "inventory"
+  path_part   = "products"
 }
 // create
 resource "aws_api_gateway_method" "create_inventory" {
@@ -278,6 +278,7 @@ resource "aws_api_gateway_integration_response" "read_inventory" {
     "application/json" = ""
   }
 }
+
 // update
 resource "aws_api_gateway_method" "update_inventory" {
   rest_api_id   = aws_api_gateway_rest_api.the_mundo_group_api.id
@@ -375,6 +376,66 @@ resource "aws_api_gateway_integration_response" "delete_inventory" {
   rest_api_id = aws_api_gateway_rest_api.the_mundo_group_api.id
   resource_id = aws_api_gateway_resource.inventory.id
   http_method = aws_api_gateway_method.delete_inventory.http_method
+  status_code = "200"
+
+  response_templates = {
+    "application/json" = ""
+  }
+}
+
+// get_product_by_colorway
+
+resource "aws_api_gateway_resource" "product" {
+  rest_api_id = aws_api_gateway_rest_api.the_mundo_group_api.id
+  parent_id   = aws_api_gateway_resource.inventory.id
+  path_part   = "product"
+}
+
+resource "aws_api_gateway_method" "get_inventory_by_colorway" {
+  rest_api_id   = aws_api_gateway_rest_api.the_mundo_group_api.id
+  resource_id   = aws_api_gateway_resource.product.id
+  http_method   = "GET"
+  authorization = "NONE"
+}
+
+resource "aws_api_gateway_integration" "get_inventory_by_colorway_lambda" {
+  rest_api_id             = aws_api_gateway_rest_api.the_mundo_group_api.id
+  resource_id             = aws_api_gateway_resource.product.id
+  http_method             = aws_api_gateway_method.get_inventory_by_colorway.http_method
+  integration_http_method = "GET"
+  type                    = "AWS_PROXY"
+  uri                     = var.inventory_lambdas["get-inventory-by-colorway"].invoke_arn
+}
+
+resource "aws_lambda_permission" "get_inventory_by_colorway_lambda" {
+  statement_id  = "AllowTMGReadInventoryAPIInvoke"
+  action        = "lambda:InvokeFunction"
+  function_name = var.inventory_lambdas["get-inventory-by-colorway"].function_name
+  principal     = "apigateway.amazonaws.com"
+  source_arn    = "${aws_api_gateway_rest_api.the_mundo_group_api.execution_arn}/*/*/*"
+}
+
+resource "aws_api_gateway_method_response" "get_inventory_by_colorway_200" {
+  rest_api_id         = aws_api_gateway_rest_api.the_mundo_group_api.id
+  resource_id         = aws_api_gateway_resource.product.id
+  http_method         = aws_api_gateway_method.get_inventory_by_colorway.http_method
+  response_parameters = { "method.response.header.Access-Control-Allow-Origin" = true }
+  response_models = {
+    "application/json" = "Empty"
+  }
+  status_code = "200"
+}
+resource "aws_api_gateway_method_response" "get_inventory_by_colorway_400" {
+  rest_api_id = aws_api_gateway_rest_api.the_mundo_group_api.id
+  resource_id = aws_api_gateway_resource.product.id
+  http_method = aws_api_gateway_method.get_inventory_by_colorway.http_method
+  status_code = "400"
+}
+
+resource "aws_api_gateway_integration_response" "get_inventory_by_colorway" {
+  rest_api_id = aws_api_gateway_rest_api.the_mundo_group_api.id
+  resource_id = aws_api_gateway_resource.product.id
+  http_method = aws_api_gateway_method.get_inventory_by_colorway.http_method
   status_code = "200"
 
   response_templates = {
