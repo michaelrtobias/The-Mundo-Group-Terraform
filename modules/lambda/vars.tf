@@ -13,5 +13,6 @@ variable "inventory_lambdas" {
     update-inventory          = "update-inventory",
     delete-inventory          = "delete-inventory",
     get-inventory-by-colorway = "get-inventory-by-colorway"
+    get-watches               = "get-watches"
   }
 }
