@@ -42,6 +42,7 @@ module "api_gateway" {
   upload_image_lambda     = module.lambdas.upload_image_lambda
   delete_image_lambda     = module.lambdas.delete_image_lambda
   inventory_lambdas       = module.lambdas.inventory_lambdas
+  cognito_user_pool_arn   = module.cognito.cognito_user_pool_arn
 }
 
 module "sqs" {

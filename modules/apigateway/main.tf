@@ -51,6 +51,14 @@ resource "aws_api_gateway_rest_api_policy" "the_mundo_group" {
 EOF
 }
 
+
+resource "aws_api_gateway_authorizer" "cognito_authorizer" {
+  name          = "CognitoUserPoolAuthorizer"
+  type          = "COGNITO_USER_POOLS"
+  rest_api_id   = aws_api_gateway_rest_api.the_mundo_group_api.id
+  provider_arns = [var.cognito_user_pool_arn]
+}
+
 resource "aws_api_gateway_resource" "wishlist" {
   rest_api_id = aws_api_gateway_rest_api.the_mundo_group_api.id
   parent_id   = aws_api_gateway_rest_api.the_mundo_group_api.root_resource_id
@@ -118,7 +126,8 @@ resource "aws_api_gateway_method" "delete_images" {
   rest_api_id   = aws_api_gateway_rest_api.the_mundo_group_api.id
   resource_id   = aws_api_gateway_resource.images.id
   http_method   = "DELETE"
-  authorization = "NONE"
+  authorization = "COGNITO_USER_POOLS"
+  authorizer_id = aws_api_gateway_authorizer.cognito_authorizer.id
 }
 
 resource "aws_api_gateway_integration" "delete_images_lambda" {
@@ -179,7 +188,8 @@ resource "aws_api_gateway_method" "create_inventory" {
   rest_api_id   = aws_api_gateway_rest_api.the_mundo_group_api.id
   resource_id   = aws_api_gateway_resource.inventory.id
   http_method   = "POST"
-  authorization = "NONE"
+  authorization = "COGNITO_USER_POOLS"
+  authorizer_id = aws_api_gateway_authorizer.cognito_authorizer.id
 }
 
 resource "aws_api_gateway_integration" "create_inventory_lambda" {
@@ -231,7 +241,8 @@ resource "aws_api_gateway_method" "read_inventory" {
   rest_api_id   = aws_api_gateway_rest_api.the_mundo_group_api.id
   resource_id   = aws_api_gateway_resource.inventory.id
   http_method   = "GET"
-  authorization = "NONE"
+  authorization = "COGNITO_USER_POOLS"
+  authorizer_id = aws_api_gateway_authorizer.cognito_authorizer.id
 }
 
 resource "aws_api_gateway_integration" "read_inventory_lambda" {
@@ -284,7 +295,8 @@ resource "aws_api_gateway_method" "update_inventory" {
   rest_api_id   = aws_api_gateway_rest_api.the_mundo_group_api.id
   resource_id   = aws_api_gateway_resource.inventory.id
   http_method   = "PUT"
-  authorization = "NONE"
+  authorization = "COGNITO_USER_POOLS"
+  authorizer_id = aws_api_gateway_authorizer.cognito_authorizer.id
 }
 
 resource "aws_api_gateway_integration" "update_inventory_lambda" {
@@ -336,7 +348,8 @@ resource "aws_api_gateway_method" "delete_inventory" {
   rest_api_id   = aws_api_gateway_rest_api.the_mundo_group_api.id
   resource_id   = aws_api_gateway_resource.inventory.id
   http_method   = "DELETE"
-  authorization = "NONE"
+  authorization = "COGNITO_USER_POOLS"
+  authorizer_id = aws_api_gateway_authorizer.cognito_authorizer.id
 }
 
 resource "aws_api_gateway_integration" "delete_inventory_lambda" {
@@ -387,8 +400,8 @@ resource "aws_api_gateway_integration_response" "delete_inventory" {
 
 resource "aws_api_gateway_resource" "product" {
   rest_api_id = aws_api_gateway_rest_api.the_mundo_group_api.id
-  parent_id   = aws_api_gateway_resource.inventory.id
-  path_part   = "product"
+  parent_id   = aws_api_gateway_resource.watches.id
+  path_part   = "watch"
 }
 
 resource "aws_api_gateway_method" "get_inventory_by_colorway" {

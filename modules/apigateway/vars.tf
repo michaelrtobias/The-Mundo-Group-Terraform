@@ -13,3 +13,5 @@ variable "upload_image_lambda" {}
 variable "delete_image_lambda" {}
 
 variable "inventory_lambdas" {}
+
+variable "cognito_user_pool_arn" {}
