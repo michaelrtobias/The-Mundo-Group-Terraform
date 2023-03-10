@@ -29,6 +29,7 @@ module "CICD" {
   source                      = "./modules/CICD"
   github_connection_arn       = aws_codestarconnections_connection.github.arn
   southwestwatches_com_bucket = module.frontend.southwestwatches_com_bucket
+  sww_cloudfront_distribution = module.frontend.sww_cloudfront_distribution
 }
 
 

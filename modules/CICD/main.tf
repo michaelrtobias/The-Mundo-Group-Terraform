@@ -262,6 +262,11 @@ resource "aws_iam_role_policy" "code_build_ui_role_policy" {
         "s3-object-lambda:*"
       ],
       "Resource": "*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": "cloudfront:CreateInvalidation",
+      "Resource": ["${var.sww_cloudfront_distribution.arn}","${var.sww_cloudfront_distribution.arn}/*"]
     }
   ]
 }
@@ -289,6 +294,11 @@ resource "aws_codebuild_project" "mundo_group_ui_project" {
     image                       = "aws/codebuild/standard:5.0"
     type                        = "LINUX_CONTAINER"
     image_pull_credentials_type = "CODEBUILD"
+
+    environment_variable {
+      name  = "DISTRIBUTION_ID"
+      value = var.sww_cloudfront_distribution.id
+    }
   }
 
   logs_config {
